@@ -47,6 +47,16 @@ Note that C<**> only matches directories. If you want to glob all files in a dir
 have to do `**/*`.
 
 =back 
+=head2 C<is_globby>
+
+    my $globby = is_globby( './foo/*/bar' );
+
+Returns C<true> if the argument contains any glob character (so C<?> or C<*>).
+Can be useful to determine if the input was an explicit path or a glob.
+
+
+Not exported by default.
+
 
 =head1 SEE ALSO
 
@@ -90,6 +100,10 @@ sub pathglob( $glob ) {
         path => $dir, 
         globs => [ $glob ],
     )->as_list;
+}
+
+sub is_globby($string) {
+    return $string =~ /[?*]/;
 }
 
 1;
