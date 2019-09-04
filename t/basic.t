@@ -41,3 +41,7 @@ is_deeply
         't/corpus/foo/bar/baz/a.x'
     ],
     "regex segment";
+
+subtest "it's all Path::Tiny objects", sub {
+    isa_ok $_, 'Path::Tiny' for pathglob( 't/corpus/**' )->all;
+};

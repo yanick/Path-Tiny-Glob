@@ -59,19 +59,21 @@ sub match( $self ) {
                 push( $state->{path}{$path}->@*, $rule->[1] );
             }
             else {
-                $state->{found}{$path} = 1;
+                $state->{found} ||= [];
+
+                push $state->{found}->@*, $path;
             }
         }
     });
 
 
-   delete $state->{path}{$_} for keys $state->{found}->%*;
+   delete $state->{path}{$_} for keys $state->{found}->@*;
 
    $self->next(
        $state->{path}
    ) if $state->{path};
 
-   $self->found([ keys $state->{found}->%* ]);
+   $self->found($state->{found});
 }
 
 # turn a glob into a regular expression
