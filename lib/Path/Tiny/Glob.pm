@@ -112,7 +112,7 @@ our @EXPORT_OK = qw/ is_globby /;
 use experimental qw/ signatures postderef /;
 
 sub _generate_pathglob {
-    my( $class, $name, $args, $globals ) = @_;
+    my( $class, undef, $args ) = @_;
 
     return sub(@) { return _pathglob(@_)->all }
         if $args && $args->{all};
