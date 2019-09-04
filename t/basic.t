@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use Cwd;
 use Path::Tiny::Glob;
@@ -30,5 +30,14 @@ is_deeply
 
 is_deeply
     [ pathglob( 't/corpus/**' )->all ],
-    [ ],
-    "trailing ** returns a glorious nothing";
+    [   't/corpus/foo/a.y',
+        't/corpus/foo/bar/baz/a.x'
+    ],
+    "trailing ** returns files";
+
+is_deeply
+    [ pathglob( [ 't/corpus/**', qr/a\.([xy])$/ ] )->all ],
+    [   't/corpus/foo/a.y',
+        't/corpus/foo/bar/baz/a.x'
+    ],
+    "regex segment";

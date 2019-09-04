@@ -21,71 +21,57 @@ has globs => (
     required => 1,
 );
 
-has children => (
-    is => 'ro',
-    lazy => 1,
-    default => sub {
-        [ Path::Tiny::path($_[0]->path)->children ];
-    }
-);
-
 has found => (
-    is => 'ro',
+    is => 'rw',
     default => sub { [] },
 );
 
 has next => (
-    is => 'ro',
+    is => 'rw',
     default => sub { +{} },
 );
 
 sub as_list($self) {
-
-    $self->match( $_ ) for $self->globs->@*;
-
+    $self->match;
     return lazy_fixed_list $self->found->@*, $self->subvisitors;
 }
 
 sub subvisitors($self) {
     return map {
         Path::Tiny::Glob::Visitor->new(
-            path => $_,
+            path => Path::Tiny::path($_),
             globs => $self->next->{$_},
         )->as_list
     } sort keys $self->next->%*;
 }
 
-sub match( $self, $glob ) {
-    my( $head, $rest ) = split '/', $glob, 2;
+sub match( $self ) {
 
-    return $self->match( $rest ) if $head eq '.';
+    my @rules = map { $self->glob2rule( $_ ) } $self->globs->@*;
 
-    if( $head eq '**' ) {
+    my $state = $self->path->visit(sub {
+        my( $path, $state ) = @_;
 
-        return unless $rest;
+        for my $rule ( @rules ) {
+            next unless $rule->[0]->($path);
+            if( $rule->[1] ) {
+                $state->{path}{$path}||=[];
+                push( $state->{path}{$path}->@*, $rule->[1] );
+            }
+            else {
+                $state->{found}{$path} = 1;
+            }
+        }
+    });
 
-        push $self->next->{$_}->@*, "**/$rest" for grep { $_->is_dir } $self->children->@*;
-        $self->match( split '/', $rest, 2 );
 
-        return;
-    }
+   delete $state->{path}{$_} for keys $state->{found}->%*;
 
-    # TODO optimize for when there is no globbing (no need
-    # to check all the children)
-    if( $rest ) {
-        no warnings;
+   $self->next(
+       $state->{path}
+   ) if $state->{path};
 
-        push $self->next->{$_}->@*, $rest for grep {
-            $_->basename =~ glob2re($head)
-        } grep { $_->is_dir }  $self->children->@*;
-
-        return;
-    }
-
-    push $self->found->@*,
-        grep { $_->is_file }
-        grep { $_->basename =~ glob2re($head) }
-                $self->children->@*;
+   $self->found([ keys $state->{found}->%* ]);
 }
 
 # turn a glob into a regular expression
@@ -94,5 +80,37 @@ sub glob2re($glob) {
     $glob =~ s/\*/.*/g;
     return qr/^$glob$/;
 }
+
+sub glob2rule($self,$glob) {
+    my( $head, @rest ) = @$glob;
+
+    if ( $head eq '.' ) {
+        return $self->glob2rule(\@rest);
+    }
+
+    if( $head eq '**' ) {
+        return [ sub { $_[0]->is_dir }, $glob ], $self->glob2rule(\@rest) if @rest;
+
+        return [ sub { $_[0]->is_file } ], [ sub { $_[0]->is_dir }, ['**'] ];
+    }
+
+    return [ $self->segment2code($head, 'is_dir' ), \@rest ] if @rest;
+
+    return [ $self->segment2code($head, ('is_file') x ! ref $head) ];
+
+}
+
+sub segment2code($self,$segment,$type_test=undef) {
+
+    $segment = glob2re($segment) unless ref $segment;
+
+    my $test = ref $segment eq 'Regexp'
+        ? sub { $_->basename =~ $segment  }
+        : $segment;
+
+    return $type_test ? sub { $_->$type_test and $test->() } : $test;
+}
+
+
 
 1;
