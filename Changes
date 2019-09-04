@@ -10,6 +10,8 @@ Revision history for Path-Tiny-Glob
  [ENHANCEMENTS]
 
  [NEW FEATURES]
+ - path can now be an array ref of segments. Segments
+    can be strings, coderefs or regexes.
 
  [STATISTICS]
 
