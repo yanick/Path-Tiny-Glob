@@ -4,12 +4,14 @@ Revision history for Path-Tiny-Glob
  [API CHANGES]
 
  [BUG FIXES]
+ - pathglob() was returning strings, not Path::Tiny objects.
 
  [DOCUMENTATION]
 
  [ENHANCEMENTS]
 
  [NEW FEATURES]
+ - pathglob can be set to return all files directly.
 
  [STATISTICS]
 
