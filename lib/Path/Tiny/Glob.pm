@@ -1,5 +1,72 @@
 package Path::Tiny::Glob;
+our $AUTHORITY = 'cpan:YANICK';
 # ABSTRACT: File globbing utility
+$Path::Tiny::Glob::VERSION = '0.1.0';
+
+use strict;
+use warnings;
+
+use Path::Tiny;
+
+use Path::Tiny::Glob::Visitor;
+
+use parent 'Exporter::Tiny';
+
+our @EXPORT = qw/ pathglob /;
+our @EXPORT_OK = qw/ is_globby /;
+
+use experimental qw/ signatures postderef /;
+
+sub pathglob( $glob ) {
+
+    my @glob = ref $glob eq 'ARRAY' ? @$glob : ($glob);
+
+    @glob = map {
+        ref ? $_ : split '/', $_, -1;
+    } @glob;
+
+    my $dir;
+
+    if ( $glob[0] =~ /^~/ ) {
+        $dir = path(shift @glob);
+    }
+    elsif( $glob[0] eq '' ) {
+        $dir = Path::Tiny->rootdir;
+        shift @glob;
+    }
+    else {
+        $dir = path('.');
+    }
+
+    unless( ref $glob[-1] ) {
+
+    }
+
+    return Path::Tiny::Glob::Visitor->new(
+        path => $dir,
+        globs => [ \@glob ],
+    )->as_list;
+}
+
+sub is_globby($string) {
+    return $string =~ /[?*]/;
+}
+
+1;
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Path::Tiny::Glob - File globbing utility
+
+=head1 VERSION
+
+version 0.1.0
 
 =head1 SYNOPSIS
 
@@ -78,63 +145,21 @@ all descendent files.
 Returns C<true> if the argument contains any glob character (so C<?> or C<*>).
 Can be useful to determine if the input was an explicit path or a glob.
 
-
 Not exported by default.
-
 
 =head1 SEE ALSO
 
 L<File::Wildcard>
 
+=head1 AUTHOR
+
+Yanick Champoux <yanick@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2019, 2018 by Yanick Champoux.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
-
-use strict;
-use warnings;
-
-use Path::Tiny;
-
-use Path::Tiny::Glob::Visitor;
-
-use parent 'Exporter::Tiny';
-
-our @EXPORT = qw/ pathglob /;
-our @EXPORT_OK = qw/ is_globby /;
-
-use experimental qw/ signatures postderef /;
-
-sub pathglob( $glob ) {
-
-    my @glob = ref $glob eq 'ARRAY' ? @$glob : ($glob);
-
-    @glob = map {
-        ref ? $_ : split '/', $_, -1;
-    } @glob;
-
-    my $dir;
-
-    if ( $glob[0] =~ /^~/ ) {
-        $dir = path(shift @glob);
-    }
-    elsif( $glob[0] eq '' ) {
-        $dir = Path::Tiny->rootdir;
-        shift @glob;
-    }
-    else {
-        $dir = path('.');
-    }
-
-    unless( ref $glob[-1] ) {
-
-    }
-
-    return Path::Tiny::Glob::Visitor->new(
-        path => $dir,
-        globs => [ \@glob ],
-    )->as_list;
-}
-
-sub is_globby($string) {
-    return $string =~ /[?*]/;
-}
-
-1;
