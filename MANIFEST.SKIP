@@ -1,7 +1,0 @@
-^dist.ini
-^MANIFEST.SKIP
-Path-Tiny-Glob.*
-^\.gitignore
-^\.git
-^\.build
-
